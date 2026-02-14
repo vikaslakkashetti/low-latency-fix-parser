@@ -6,7 +6,6 @@ import static com.vikas.main.TestUtility.soh;
 
 class FixParserOptimizedCancelTest {
 
-    private static final byte SOH = 1;
 
     @Test
     void shouldParseCancel() {
@@ -61,13 +60,4 @@ class FixParserOptimizedCancelTest {
         assertEquals(FixError.MISSING_ORIG_CLORDID, error);
     }
 
-
-    /*private byte[] buildMessage(String body) {
-        byte[] bytes = body.getBytes(StandardCharsets.US_ASCII);
-        int sum = 0;
-        for (byte b : bytes) sum += (b & 0xFF);
-        int checksum = sum % 256;
-        String full = body + "10=" + String.format("%03d", checksum) + soh();
-        return full.getBytes(StandardCharsets.US_ASCII);
-    }*/
 }
