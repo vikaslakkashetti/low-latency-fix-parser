@@ -3,7 +3,6 @@ package com.vikas.main;
 /**
  * This class represents a view to the Replace Order message.
  * Basically allocation free new order body view
- *
  */
 public final class ReplaceOrderView {
 
@@ -89,4 +88,29 @@ public final class ReplaceOrderView {
     void setOrderQty(int value) {
         orderQty = value;
     }
+
+    boolean hasClOrdId() {
+        return clOrdIdLength > 0;
+    }
+
+    boolean hasOrigClOrdId() {
+        return origClOrdIdLength > 0;
+    }
+
+    void reset() {
+        orderQty = 0;
+        price = 0.0;
+        side = 0;
+
+        clOrdIdOffset = 0;
+        clOrdIdLength = 0;
+
+        origClOrdIdOffset = 0;
+        origClOrdIdLength = 0;
+
+        symbolOffset = 0;
+        symbolLength = 0;
+    }
+
+
 }

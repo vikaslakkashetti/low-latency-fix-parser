@@ -2,7 +2,7 @@ package com.vikas.main;
 
 /**
  * Lightweight, allocation-free view over a segment of an ASCII byte array.
- *
+ * <p>
  * This class is created to avoid string allocation of fix fields.
  * assumes ASCII input as per fix protocol.
  * It's backed directly by the original FIX message buffer and uses offset and length.
@@ -54,4 +54,64 @@ public final class AsciiStringView implements CharSequence {
     public String toString() {
         return new String(buffer, offset, length);
     }
+
+    //Methods added to check equality.
+    public boolean equalsAscii(String s) {
+        if (s.length() != length) return false;
+        for (int i = 0; i < length; i++) {
+            if ((char) buffer[offset + i] != s.charAt(i))
+                return false;
+        }
+        return true;
+    }
+
+    public boolean equalsAscii(byte[] other) {
+        if (other.length != length) return false;
+
+        for (int i = 0; i < length; i++) {
+            if (buffer[offset + i] != other[i])
+                return false;
+        }
+        return true;
+    }
+
+    public boolean equalsAscii(AsciiStringView other) {
+        if (this.length != other.length)
+            return false;
+
+        for (int i = 0; i < length; i++) {
+            if (this.buffer[this.offset + i] !=
+                    other.buffer[other.offset + i])
+                return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof AsciiStringView)) return false;
+
+        AsciiStringView other = (AsciiStringView) obj;
+
+        if (this.length != other.length)
+            return false;
+
+        for (int i = 0; i < length; i++) {
+            if (buffer[offset + i] !=
+                    other.buffer[other.offset + i])
+                return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int h = 0;
+        for (int i = 0; i < length; i++) {
+            h = 31 * h + buffer[offset + i];
+        }
+        return h;
+    }
+
 }

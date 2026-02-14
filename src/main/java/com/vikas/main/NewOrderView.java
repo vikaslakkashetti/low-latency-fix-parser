@@ -3,7 +3,6 @@ package com.vikas.main;
 /**
  * This class represents a view to the New Order message.
  * Basically allocation free new order body view
- *
  */
 public final class NewOrderView {
 
@@ -31,7 +30,12 @@ public final class NewOrderView {
     private int transactTimeOffset;
     private int transactTimeLength;
 
-    private int exDestination;
+    private int exDestinationOffset;
+    private int exDestinationLength;
+
+
+    private int orderQty;
+
 
     private final AsciiStringView stringView = new AsciiStringView();
 
@@ -80,9 +84,15 @@ public final class NewOrderView {
         return timeInForce;
     }
 
-    public int exDestination() {
-        return exDestination;
+    public CharSequence exDestination() {
+        stringView.wrap(buffer, exDestinationOffset, exDestinationLength);
+        return stringView;
     }
+
+    public int orderQty() {
+        return orderQty;
+    }
+
 
     void setAccount(int offset, int length) {
         accountOffset = offset;
@@ -121,11 +131,70 @@ public final class NewOrderView {
         timeInForce = value;
     }
 
-    void setExDestination(int value) {
-        exDestination = value;
+    void setExDestination(int offset, int length) {
+        exDestinationOffset = offset;
+        exDestinationLength = length;
     }
+
+    void setOrderQty(int value) {
+        orderQty = value;
+    }
+
 
     void setPrice(double value) {
         price = value;
     }
+
+    boolean hasClOrdId() {
+        return clOrdIdLength > 0;
+    }
+
+    boolean hasSymbol() {
+        return symbolLength > 0;
+    }
+
+    boolean hasOrderQty() {
+        return orderQty > 0;
+    }
+
+    boolean hasPrice() {
+        return price != 0.0;
+    }
+
+    boolean hasSide() {
+        return side != 0;
+    }
+
+    boolean hasExDestination() {
+        return exDestinationLength > 0;
+    }
+
+    void reset() {
+        orderQty = 0;
+        price = 0.0;
+        side = 0;
+        handlInst = 0;
+        timeInForce = 0;
+
+
+        accountOffset = 0;
+        accountLength = 0;
+
+        clOrdIdOffset = 0;
+        clOrdIdLength = 0;
+
+        symbolOffset = 0;
+        symbolLength = 0;
+
+        rule80AOffset = 0;
+        rule80ALength = 0;
+
+        transactTimeOffset = 0;
+        transactTimeLength = 0;
+
+        exDestinationOffset = 0;
+        exDestinationLength = 0;
+    }
+
+
 }

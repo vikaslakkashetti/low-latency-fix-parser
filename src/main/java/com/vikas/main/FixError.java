@@ -3,16 +3,14 @@ package com.vikas.main;
 public enum FixError {
 
     NO_ERROR(0),
-
     MALFORMED_TAG(1),
     MALFORMED_FIELD(2),
     INVALID_NUMERIC(3),
-
     INVALID_HEADER_ORDER(10),
-
     BODY_LENGTH_MISMATCH(20),
-    INVALID_CHECKSUM(21);
-
+    INVALID_CHECKSUM(21),
+    MISSING_CLORDID(22),
+    MISSING_ORIG_CLORDID(22);
     private final int code;
 
     FixError(int code) {

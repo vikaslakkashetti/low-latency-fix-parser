@@ -1,15 +1,16 @@
 package com.vikas.main;
 /**
  * JMH microbenchmark measuring average time per FIX message parse.
- *
+ * <p>
  * Used to obtain stable ns/op measurements under:
- *  - Multiple forks
- *  - JVM warmup
- *  - GC profiling
- *
+ * - Multiple forks
+ * - JVM warmup
+ * - GC profiling
+ * <p>
  * Baseline result:
  * ~327 ns/op (JDK 17, 2 forks, 5x5 iterations)
  */
+
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 

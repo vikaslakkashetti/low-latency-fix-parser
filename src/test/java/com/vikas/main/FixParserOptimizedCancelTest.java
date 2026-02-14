@@ -40,6 +40,30 @@ class FixParserOptimizedCancelTest {
         assertEquals('1', view.side());
     }
 
+    @Test
+    void shouldFailWhenCancelMissingOrigClOrdId() {
+
+        byte[] message = buildMessage(
+                "8=FIX.4.4" + soh() +
+                        "9=100" + soh() +
+                        "35=F" + soh() +
+                        "34=1" + soh() +
+                        "49=SENDER" + soh() +
+                        "52=20260212-12:30:00.000" + soh() +
+                        "56=TARGET" + soh() +
+                        "11=CANCEL1" + soh() +
+                        "55=AAPL" + soh() +
+                        "54=1" + soh()
+                // 41=OrigClOrdID
+        );
+
+        FixParserOptimized parser = new FixParserOptimized();
+        FixError error = parser.parse(message, message.length);
+
+        assertEquals(FixError.MISSING_ORIG_CLORDID, error);
+    }
+
+
     private byte[] buildMessage(String body) {
         byte[] bytes = body.getBytes(StandardCharsets.US_ASCII);
         int sum = 0;

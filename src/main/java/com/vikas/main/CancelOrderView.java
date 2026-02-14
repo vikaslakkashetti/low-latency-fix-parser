@@ -3,7 +3,6 @@ package com.vikas.main;
 /**
  * This class represents a view to the Cancel Order message.
  * Basically allocation free new order body view
- *
  */
 public final class CancelOrderView {
 
@@ -63,4 +62,27 @@ public final class CancelOrderView {
     void setSide(int value) {
         side = value;
     }
+
+    boolean hasClOrdId() {
+        return clOrdIdLength > 0;
+    }
+
+    boolean hasOrigClOrdId() {
+        return origClOrdIdLength > 0;
+    }
+
+    void reset() {
+        side = 0;
+
+        clOrdIdOffset = 0;
+        clOrdIdLength = 0;
+
+        origClOrdIdOffset = 0;
+        origClOrdIdLength = 0;
+
+        symbolOffset = 0;
+        symbolLength = 0;
+    }
+
+
 }

@@ -2,22 +2,28 @@ package com.vikas.main;
 
 /**
  * Optimized FIX message parser optimized for low-latency.
- *
+ * <p>
  * Points to note:
- *  - Zero heap allocations during parsing (views reuse underlying buffer)
- *  - Strict validation of first three FIX header fields (8, 9, 35)
- *  - Separation of common header and message-specific body views
- *  - Parsing is single-pass for field extraction
- *  - Checksum verification is currently implemented as a second pass.
- *  - @Todo : Optimize checksum calculations for single pass *
- *  - All string fields are exposed via AsciiStringView (no String allocation)
+ * - Zero heap allocations during parsing (views reuse underlying buffer)
+ * - Strict validation of first three FIX header fields (8, 9, 35)
+ * - Separation of common header and message-specific body views
+ * - Parsing is single-pass for field extraction
+ * - Checksum verification is currently implemented as a second pass.
+ * - @Todo : Optimize checksum calculations for single pass *
+ * - All string fields are exposed via AsciiStringView (no String allocation)
+ * The parser operates on a single contiguous byte array and processes it sequentially.
+ * This keeps memory access linear and cache-friendly and avoids object graph traversal.
  */
 public final class FixParserOptimized {
 
-    /** FIX field delimiter (ASCII SOH = 0x01). */
+    /**
+     * FIX field delimiter (ASCII SOH = 0x01).
+     */
     private static final byte SOH = 1;
 
-    /** Parsed message type (tag 35). */
+    /**
+     * Parsed message type (tag 35).
+     */
     private byte msgType;
 
     // Common header view shared by all message types
@@ -49,16 +55,16 @@ public final class FixParserOptimized {
     }
 
     /**
-     * Parses a FIX message from the provided byte buffer.
-     *
+     * Parses a FIX message from the provided byte buffer.     *
      * Assumptions:
-     *  - Buffer contains exactly one complete FIX message
-     *  - Tag 10 (checksum) is the final field
-     *
+     * - Buffer contains exactly one complete FIX message
+     * - Tag 10 (checksum) is the final field
      * Validation performed:
-     *  - Strict ordering of first three header fields (8, 9, 35)
-     *  - Basic tag and field format validation
-     *  - Checksum validation (mod 256)
+     * - Strict ordering of first three header fields (8, 9, 35)
+     * - Basic tag and field format validation
+     * - Checks on some body fields
+     * - @Todo add more checks on each field in body using hasXXX methods from the view
+     * - Checksum validation (mod 256)
      *
      * @return FixError indicating parse success or specific validation failure
      */
@@ -66,11 +72,18 @@ public final class FixParserOptimized {
 
         msgType = 0;
 
+
+        msgType = 0;
         // Wrap underlying buffer in reusable views
         headerView.wrap(buffer);
         newOrderView.wrap(buffer);
         cancelOrderView.wrap(buffer);
         replaceOrderView.wrap(buffer);
+        //Reset each of the views
+        headerView.reset();
+        newOrderView.reset();
+        cancelOrderView.reset();
+        replaceOrderView.reset();
 
         int tag = 0;
         int valueStart = -1;
@@ -165,7 +178,9 @@ public final class FixParserOptimized {
                             replaceOrderView.setPrice(parseDouble(buffer, valueStart, valueEnd));
                         break;
                     case 38:
-                        if (msgType == 'G')
+                        if (msgType == 'D')
+                            newOrderView.setOrderQty(parseInt(buffer, valueStart, valueEnd));
+                        else if (msgType == 'G')
                             replaceOrderView.setOrderQty(parseInt(buffer, valueStart, valueEnd));
                         break;
                     case 47:
@@ -178,7 +193,7 @@ public final class FixParserOptimized {
                         newOrderView.setTransactTime(valueStart, len);
                         break;
                     case 100:
-                        newOrderView.setExDestination(parseInt(buffer, valueStart, valueEnd));
+                        newOrderView.setExDestination(valueStart, len);
                         break;
                 }
 
@@ -206,6 +221,28 @@ public final class FixParserOptimized {
 
         if ((checksum % 256) != expectedChecksum)
             return FixError.INVALID_CHECKSUM;
+        // mandatory body field validations.
+        // for other fields we could add checks accordingly
+        switch (msgType) {
+            case 'D': // NewOrderSingle
+                if (!newOrderView.hasClOrdId())
+                    return FixError.MISSING_CLORDID;
+                break;
+            case 'F': // Cancel
+                if (!cancelOrderView.hasClOrdId())
+                    return FixError.MISSING_CLORDID;
+                if (!cancelOrderView.hasOrigClOrdId())
+                    return FixError.MISSING_ORIG_CLORDID;
+                break;
+            case 'G': // Replace
+                if (!replaceOrderView.hasClOrdId())
+                    return FixError.MISSING_CLORDID;
+                if (!replaceOrderView.hasOrigClOrdId())
+                    return FixError.MISSING_ORIG_CLORDID;
+                break;
+            default:
+                return FixError.MALFORMED_FIELD;
+        }
 
         return FixError.NO_ERROR;
     }
@@ -225,6 +262,7 @@ public final class FixParserOptimized {
      * Lightweight ASCII decimal parsing.
      * Avoids any allocation and usage of bigdecimal .
      * Assumes well-formed numeric input - for now.
+     *
      * @Todo : to handle not well-formed input. return a Double.NAN and then eventually FixError.INVALID_NUMERIC
      */
     private static double parseDouble(byte[] buffer, int start, int end) {
@@ -244,4 +282,6 @@ public final class FixParserOptimized {
         }
         return fraction ? value / divisor : value;
     }
+
+
 }

@@ -2,21 +2,23 @@ package com.vikas.main;
 
 /**
  * This class represents the FIX message header.
- *  Store parsed values of common header fields
- *  Provides lightweight accessors without allocation
- *  Reusable across multiple FIX message types
- *  String fields are exposed via single reused AsciiStringView to avoid allocation *
+ * Store parsed values of common header fields
+ * Provides lightweight accessors without allocation
+ * Reusable across multiple FIX message types
+ * String fields are exposed via single reused AsciiStringView to avoid allocation *
  * FIX header fields handled (for now)
- *  - 9   (BodyLength)
- *  - 34  (MsgSeqNum)
- *  - 49  (SenderCompID)
- *  - 52  (SendingTime)
- *  - 56  (TargetCompID)
- *  Fields can be added as required
+ * - 9   (BodyLength)
+ * - 34  (MsgSeqNum)
+ * - 49  (SenderCompID)
+ * - 52  (SendingTime)
+ * - 56  (TargetCompID)
+ * Fields can be added as required
  */
 public final class HeaderView {
 
-    /** Underlying FIX message buffer. */
+    /**
+     * Underlying FIX message buffer.
+     */
     private byte[] buffer;
 
     // Primitive header fields
@@ -33,7 +35,9 @@ public final class HeaderView {
     private int sendingTimeOffset;
     private int sendingTimeLength;
 
-    /** Reused string view as explained earlier to avoid per-call allocation and reduce memory footprint. */
+    /**
+     * Reused string view as explained earlier to avoid per-call allocation and reduce memory footprint.
+     */
     private final AsciiStringView stringView = new AsciiStringView();
 
     /**
@@ -77,7 +81,6 @@ public final class HeaderView {
     }
 
 
-
     void setBodyLength(int value) {
         bodyLength = value;
     }
@@ -100,4 +103,19 @@ public final class HeaderView {
         sendingTimeOffset = offset;
         sendingTimeLength = length;
     }
+
+    void reset() {
+        bodyLength = 0;
+        msgSeqNum = 0;
+
+        senderCompOffset = 0;
+        senderCompLength = 0;
+
+        targetCompOffset = 0;
+        targetCompLength = 0;
+
+        sendingTimeOffset = 0;
+        sendingTimeLength = 0;
+    }
+
 }
