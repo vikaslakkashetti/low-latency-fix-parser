@@ -1,9 +1,7 @@
 package com.vikas.main;
 
 import org.junit.jupiter.api.Test;
-
-import java.nio.charset.StandardCharsets;
-
+import static com.vikas.main.TestUtility.soh;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class FixParserOptimizedNewOrderTest {
@@ -15,20 +13,21 @@ class FixParserOptimizedNewOrderTest {
 
         FixParserOptimized parser = new FixParserOptimized();
 
-        byte[] message = buildMessage(
+        byte[] message = TestUtility.buildMessage(
                 "8=FIX.4.4" + soh() +
                         "9=176" + soh() +
                         "35=D" + soh() +
-                        "34=2" + soh() +
                         "49=SENDER" + soh() +
-                        "52=20260212-12:30:00.000" + soh() +
                         "56=TARGET" + soh() +
+                        "34=2" + soh() +
+                        "52=20260212-12:30:00.000" + soh() +
                         "1=ACC123" + soh() +
                         "11=ORDER123" + soh() +
                         "21=1" + soh() +
                         "44=123.45" + soh() +
                         "47=A" + soh() +
                         "54=1" + soh() +
+                        "38=1000" + soh() +
                         "55=AAPL" + soh() +
                         "59=0" + soh() +
                         "60=20260212-12:30:01.000" + soh() +
@@ -57,35 +56,51 @@ class FixParserOptimizedNewOrderTest {
     @Test
     void shouldFailWhenNewOrderMissingClOrdId() {
 
-        byte[] message = buildMessage(
+        byte[] message = TestUtility.buildMessage(
                 "8=FIX.4.4" + soh() +
                         "9=100" + soh() +
                         "35=D" + soh() +
-                        "34=1" + soh() +
                         "49=SENDER" + soh() +
-                        "52=20260212-12:30:00.000" + soh() +
                         "56=TARGET" + soh() +
+                        "34=1" + soh() +
+                        "52=20260212-12:30:00.000" + soh() +
                         "55=AAPL" + soh() +
                         "54=1" + soh()
                 // Missing 11=ClOrdID
         );
-
         FixParserOptimized parser = new FixParserOptimized();
         FixError error = parser.parse(message, message.length);
         assertEquals(FixError.MISSING_CLORDID, error);
     }
 
+    @Test
+    void shouldFailWhenNewOrderMissingOrderQty() {
 
-    private byte[] buildMessage(String body) {
+        byte[] message = TestUtility.buildMessage(
+                "8=FIX.4.4" + soh() +
+                        "9=100" + soh() +
+                        "35=D" + soh() +
+                        "49=SENDER" + soh() +
+                        "56=TARGET" + soh() +
+                        "34=1" + soh() +
+                        "52=20260212-12:30:00.000" + soh() +
+                        "55=AAPL" + soh() +
+                        "54=1" + soh() +
+                        "11=ClOrdID" + soh()
+        );
+        FixParserOptimized parser = new FixParserOptimized();
+        FixError error = parser.parse(message, message.length);
+        assertEquals(FixError.MISSING_ORDER_QTY, error);
+    }
+
+    /*private byte[] buildMessage(String body) {
         byte[] bytes = body.getBytes(StandardCharsets.US_ASCII);
         int sum = 0;
         for (byte b : bytes) sum += (b & 0xFF);
         int checksum = sum % 256;
         String full = body + "10=" + String.format("%03d", checksum) + soh();
         return full.getBytes(StandardCharsets.US_ASCII);
-    }
+    }*/
 
-    private String soh() {
-        return String.valueOf((char) SOH);
-    }
+
 }

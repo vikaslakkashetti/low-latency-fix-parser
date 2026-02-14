@@ -10,7 +10,9 @@ public enum FixError {
     BODY_LENGTH_MISMATCH(20),
     INVALID_CHECKSUM(21),
     MISSING_CLORDID(22),
-    MISSING_ORIG_CLORDID(22);
+    MISSING_ORIG_CLORDID(23),
+    MISSING_SYMBOL(24),
+    MISSING_ORDER_QTY(25);
     private final int code;
 
     FixError(int code) {

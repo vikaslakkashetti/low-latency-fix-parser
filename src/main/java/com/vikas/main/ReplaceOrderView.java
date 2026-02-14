@@ -89,13 +89,18 @@ public final class ReplaceOrderView {
         orderQty = value;
     }
 
-    boolean hasClOrdId() {
-        return clOrdIdLength > 0;
+    boolean hasClOrdId() { return clOrdIdLength > 0; }
+
+    boolean hasOrigClOrdId() { return origClOrdIdLength > 0;  }
+
+    boolean hasOrderQty() {
+        return orderQty > 0;
     }
 
-    boolean hasOrigClOrdId() {
-        return origClOrdIdLength > 0;
+    boolean hasPrice() {
+        return price != 0.0;
     }
+
 
     void reset() {
         orderQty = 0;

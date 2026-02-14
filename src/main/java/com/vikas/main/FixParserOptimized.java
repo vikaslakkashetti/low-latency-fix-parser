@@ -109,12 +109,20 @@ public final class FixParserOptimized {
                 int valueEnd = i;
                 int len = valueEnd - valueStart;
 
-                // Enforce strict FIX header ordering for first 3 fields
+                // Enforce strict FIX header ordering for few fields
                 if (fieldCount == 0 && tag != 8)
                     return FixError.INVALID_HEADER_ORDER;
                 if (fieldCount == 1 && tag != 9)
                     return FixError.INVALID_HEADER_ORDER;
                 if (fieldCount == 2 && tag != 35)
+                    return FixError.INVALID_HEADER_ORDER;
+                if (fieldCount == 3 && tag != 49)
+                    return FixError.INVALID_HEADER_ORDER;
+                if (fieldCount == 4 && tag != 56)
+                    return FixError.INVALID_HEADER_ORDER;
+                if (fieldCount == 5 && tag != 34)
+                    return FixError.INVALID_HEADER_ORDER;
+                if (fieldCount == 6 && tag != 52)
                     return FixError.INVALID_HEADER_ORDER;
 
                 // Checksum field terminates parsing
@@ -227,6 +235,10 @@ public final class FixParserOptimized {
             case 'D': // NewOrderSingle
                 if (!newOrderView.hasClOrdId())
                     return FixError.MISSING_CLORDID;
+                if (!newOrderView.hasOrderQty())
+                    return FixError.MISSING_ORDER_QTY;
+                if (!newOrderView.hasSymbol())
+                    return FixError.MISSING_SYMBOL;
                 break;
             case 'F': // Cancel
                 if (!cancelOrderView.hasClOrdId())
@@ -239,6 +251,8 @@ public final class FixParserOptimized {
                     return FixError.MISSING_CLORDID;
                 if (!replaceOrderView.hasOrigClOrdId())
                     return FixError.MISSING_ORIG_CLORDID;
+                if (!replaceOrderView.hasOrderQty())
+                    return FixError.MISSING_ORDER_QTY;
                 break;
             default:
                 return FixError.MALFORMED_FIELD;

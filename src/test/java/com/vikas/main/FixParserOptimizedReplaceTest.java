@@ -1,28 +1,25 @@
 package com.vikas.main;
 
 import org.junit.jupiter.api.Test;
-
-import java.nio.charset.StandardCharsets;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.vikas.main.TestUtility.soh;
 
 class FixParserOptimizedReplaceTest {
 
-    private static final byte SOH = 1;
 
     @Test
     void shouldParseReplace() {
 
         FixParserOptimized parser = new FixParserOptimized();
 
-        byte[] message = buildMessage(
+        byte[] message = TestUtility.buildMessage(
                 "8=FIX.4.4" + soh() +
                         "9=140" + soh() +
                         "35=G" + soh() +
-                        "34=4" + soh() +
                         "49=SENDER" + soh() +
-                        "52=20260212-12:30:00.000" + soh() +
                         "56=TARGET" + soh() +
+                        "34=4" + soh() +
+                        "52=20260212-12:30:00.000" + soh() +
                         "11=REPL1" + soh() +
                         "41=ORDER123" + soh() +
                         "55=AAPL" + soh() +
@@ -44,16 +41,4 @@ class FixParserOptimizedReplaceTest {
         assertEquals(100, view.orderQty());
     }
 
-    private byte[] buildMessage(String body) {
-        byte[] bytes = body.getBytes(StandardCharsets.US_ASCII);
-        int sum = 0;
-        for (byte b : bytes) sum += (b & 0xFF);
-        int checksum = sum % 256;
-        String full = body + "10=" + String.format("%03d", checksum) + soh();
-        return full.getBytes(StandardCharsets.US_ASCII);
-    }
-
-    private String soh() {
-        return String.valueOf((char) SOH);
-    }
 }

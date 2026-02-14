@@ -7,6 +7,8 @@ package com.vikas.main;
  * assumes ASCII input as per fix protocol.
  * It's backed directly by the original FIX message buffer and uses offset and length.
  * No copying of bytes and no string creation.
+ * The hashing algorithm used is standard Java polynomial rolling hash (same as String.hashCode()) using multiplier 31
+ * This also gives us flexibility to use other hashing algorihms if need be.
  */
 public final class AsciiStringView implements CharSequence {
 
@@ -104,6 +106,7 @@ public final class AsciiStringView implements CharSequence {
         }
         return true;
     }
+
 
     @Override
     public int hashCode() {
