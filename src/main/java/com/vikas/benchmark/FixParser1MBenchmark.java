@@ -3,7 +3,14 @@ package com.vikas.benchmark;
 import com.vikas.main.FixParserOptimized;
 
 import java.nio.charset.StandardCharsets;
-
+/*
+Baseline:
+java -Xms2g -Xmx2g  -cp target\classes com.vikas.benchmark.FixParser1MBenchmark
+Parsed 1,000,000 messages
+Total time (ms): 526.8827
+Average ns/message: 526.8827
+Throughput (msg/sec): 1897955.6550253027
+ */
 public class FixParser1MBenchmark {
 
     private static final byte SOH = 1;

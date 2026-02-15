@@ -1,14 +1,16 @@
 package com.vikas.benchmark;
 /**
  * JMH microbenchmark measuring average time per FIX message parse.
- * <p>
  * Used to obtain stable ns/op measurements under:
  * - Multiple forks
  * - JVM warmup
  * - GC profiling
- * <p>
+ *
  * Baseline result:
- * ~327 ns/op (JDK 17, 2 forks, 5x5 iterations)
+ * FixParserJmhBenchmark.parseFullMessage                     avgt   10  409.709 ± 19.937   ns/op
+ * FixParserJmhBenchmark.parseFullMessage:gc.alloc.rate       avgt   10    0.006 ±  0.001  MB/sec
+ * FixParserJmhBenchmark.parseFullMessage:gc.alloc.rate.norm  avgt   10    0.002 ±  0.001    B/op
+ * FixParserJmhBenchmark.parseFullMessage:gc.count            avgt   10      ≈ 0           counts
  */
 
 import com.vikas.main.FixError;
