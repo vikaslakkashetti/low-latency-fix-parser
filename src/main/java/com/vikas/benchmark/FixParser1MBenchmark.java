@@ -7,9 +7,9 @@ import java.nio.charset.StandardCharsets;
 Baseline:
 java -Xms2g -Xmx2g  -cp target\classes com.vikas.benchmark.FixParser1MBenchmark
 Parsed 1,000,000 messages
-Total time (ms): 526.8827
-Average ns/message: 526.8827
-Throughput (msg/sec): 1897955.6550253027
+Total time (ms): 409.6875
+Average ns/message: 409.6875
+Throughput (msg/sec): 2440884.820747521
  */
 public class FixParser1MBenchmark {
 
