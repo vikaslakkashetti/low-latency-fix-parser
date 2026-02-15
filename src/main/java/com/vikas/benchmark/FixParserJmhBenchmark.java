@@ -1,4 +1,4 @@
-package com.vikas.main;
+package com.vikas.benchmark;
 /**
  * JMH microbenchmark measuring average time per FIX message parse.
  * <p>
@@ -11,6 +11,10 @@ package com.vikas.main;
  * ~327 ns/op (JDK 17, 2 forks, 5x5 iterations)
  */
 
+import com.vikas.main.FixError;
+import com.vikas.main.FixParserOptimized;
+import com.vikas.main.HeaderView;
+import com.vikas.main.NewOrderView;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
