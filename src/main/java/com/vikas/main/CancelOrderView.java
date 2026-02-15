@@ -1,23 +1,14 @@
 package com.vikas.main;
 
 /**
- * This class represents a view to the Cancel Order message.
- * Basically allocation free new order body view
+ * Allocation-free Cancel Order view using tag-indexed storage.
  */
 public final class CancelOrderView {
 
     private byte[] buffer;
 
-    private int clOrdIdOffset;
-    private int clOrdIdLength;
-
-    private int origClOrdIdOffset;
-    private int origClOrdIdLength;
-
-    private int symbolOffset;
-    private int symbolLength;
-
-    private int side;
+    private final int[] offsets = new int[FixTag.MAX_TAG_SUPPORTED];
+    private final int[] lengths = new int[FixTag.MAX_TAG_SUPPORTED];
 
     private final AsciiStringView stringView = new AsciiStringView();
 
@@ -26,63 +17,41 @@ public final class CancelOrderView {
     }
 
     public CharSequence clOrdId() {
-        stringView.wrap(buffer, clOrdIdOffset, clOrdIdLength);
+        stringView.wrap(buffer,
+                offsets[FixTag.ClOrdID.tag()],
+                lengths[FixTag.ClOrdID.tag()]);
         return stringView;
     }
 
     public CharSequence origClOrdId() {
-        stringView.wrap(buffer, origClOrdIdOffset, origClOrdIdLength);
+        stringView.wrap(buffer,
+                offsets[FixTag.OrigClOrdID.tag()],
+                lengths[FixTag.OrigClOrdID.tag()]);
         return stringView;
     }
 
     public CharSequence symbol() {
-        stringView.wrap(buffer, symbolOffset, symbolLength);
+        stringView.wrap(buffer,
+                offsets[FixTag.Symbol.tag()],
+                lengths[FixTag.Symbol.tag()]);
         return stringView;
     }
 
     public int side() {
-        return side;
+        return buffer[offsets[FixTag.Side.tag()]];
     }
 
-    void setClOrdId(int offset, int length) {
-        clOrdIdOffset = offset;
-        clOrdIdLength = length;
+    void setTag(int tag, int offset, int length) {
+        offsets[tag] = offset;
+        lengths[tag] = length;
     }
 
-    void setOrigClOrdId(int offset, int length) {
-        origClOrdIdOffset = offset;
-        origClOrdIdLength = length;
-    }
-
-    void setSymbol(int offset, int length) {
-        symbolOffset = offset;
-        symbolLength = length;
-    }
-
-    void setSide(int value) {
-        side = value;
-    }
-
-    boolean hasClOrdId() {
-        return clOrdIdLength > 0;
-    }
-
-    boolean hasOrigClOrdId() {
-        return origClOrdIdLength > 0;
+    boolean hasTag(int tag) {
+        return lengths[tag] > 0;
     }
 
     void reset() {
-        side = 0;
-
-        clOrdIdOffset = 0;
-        clOrdIdLength = 0;
-
-        origClOrdIdOffset = 0;
-        origClOrdIdLength = 0;
-
-        symbolOffset = 0;
-        symbolLength = 0;
+        java.util.Arrays.fill(offsets, 0);
+        java.util.Arrays.fill(lengths, 0);
     }
-
-
 }

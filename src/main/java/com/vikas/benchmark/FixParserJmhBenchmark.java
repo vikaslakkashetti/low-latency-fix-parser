@@ -7,9 +7,10 @@ package com.vikas.benchmark;
  * - GC profiling
  *
  * Baseline result:
- * FixParserJmhBenchmark.parseFullMessage                     avgt   10  409.709 ± 19.937   ns/op
+ * Benchmark                                                  Mode  Cnt    Score    Error   Units
+ * FixParserJmhBenchmark.parseFullMessage                     avgt   10  584.813 ± 66.736   ns/op
  * FixParserJmhBenchmark.parseFullMessage:gc.alloc.rate       avgt   10    0.006 ±  0.001  MB/sec
- * FixParserJmhBenchmark.parseFullMessage:gc.alloc.rate.norm  avgt   10    0.002 ±  0.001    B/op
+ * FixParserJmhBenchmark.parseFullMessage:gc.alloc.rate.norm  avgt   10    0.003 ±  0.001    B/op
  * FixParserJmhBenchmark.parseFullMessage:gc.count            avgt   10      ≈ 0           counts
  */
 

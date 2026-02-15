@@ -1,41 +1,26 @@
 package com.vikas.main;
 
 /**
- * This class represents a view to the New Order message.
- * Basically allocation free new order body view
+ * Allocation-free view of NewOrderSingle (35=D).
+ *
+ * Design:
+ * - Stores offsets and lengths per FIX tag
+ * - No String allocations
+ * - Primitives parsed lazily on first access and cached
  */
 public final class NewOrderView {
 
     private byte[] buffer;
-    private int accountOffset;
-    private int accountLength;
 
-    private int clOrdIdOffset;
-    private int clOrdIdLength;
+    private final int[] offsets = new int[FixTag.MAX_TAG_SUPPORTED];
+    private final int[] lengths = new int[FixTag.MAX_TAG_SUPPORTED];
 
-    private int handlInst;
+    // ---- Lazy primitive cache ----
+    private boolean priceParsed;
+    private double priceCache;
 
-    private double price;
-
-    private int rule80AOffset;
-    private int rule80ALength;
-
-    private int side;
-
-    private int symbolOffset;
-    private int symbolLength;
-
-    private int timeInForce;
-
-    private int transactTimeOffset;
-    private int transactTimeLength;
-
-    private int exDestinationOffset;
-    private int exDestinationLength;
-
-
-    private int orderQty;
-
+    private boolean qtyParsed;
+    private int qtyCache;
 
     private final AsciiStringView stringView = new AsciiStringView();
 
@@ -43,158 +28,164 @@ public final class NewOrderView {
         this.buffer = buffer;
     }
 
+    /* ===========================
+       String / CharSequence fields
+       =========================== */
+
     public CharSequence account() {
-        stringView.wrap(buffer, accountOffset, accountLength);
-        return stringView;
+        return wrapView(FixTag.Account.tag());
     }
 
     public CharSequence clOrdId() {
-        stringView.wrap(buffer, clOrdIdOffset, clOrdIdLength);
-        return stringView;
+        return wrapView(FixTag.ClOrdID.tag());
     }
 
     public CharSequence symbol() {
-        stringView.wrap(buffer, symbolOffset, symbolLength);
-        return stringView;
+        return wrapView(FixTag.Symbol.tag());
     }
 
     public CharSequence transactTime() {
-        stringView.wrap(buffer, transactTimeOffset, transactTimeLength);
-        return stringView;
+        return wrapView(FixTag.TransactTime.tag());
     }
 
     public CharSequence rule80A() {
-        stringView.wrap(buffer, rule80AOffset, rule80ALength);
-        return stringView;
-    }
-
-    public int handlInst() {
-        return handlInst;
-    }
-
-    public double price() {
-        return price;
-    }
-
-    public int side() {
-        return side;
-    }
-
-    public int timeInForce() {
-        return timeInForce;
+        return wrapView(FixTag.Rule80A.tag());
     }
 
     public CharSequence exDestination() {
-        stringView.wrap(buffer, exDestinationOffset, exDestinationLength);
-        return stringView;
+        return wrapView(FixTag.ExDestination.tag());
+    }
+
+    /* ===========================
+       Primitive fields (lazy)
+       =========================== */
+
+    public int handlInst() {
+        return buffer[offsets[FixTag.HandlInst.tag()]];
+    }
+
+    public int side() {
+        return buffer[offsets[FixTag.Side.tag()]];
+    }
+
+    public int timeInForce() {
+        return buffer[offsets[FixTag.TimeInForce.tag()]];
     }
 
     public int orderQty() {
-        return orderQty;
+        if (!qtyParsed) {
+            qtyCache = parseInt(offsets[FixTag.OrderQty.tag()],
+                    lengths[FixTag.OrderQty.tag()]);
+            qtyParsed = true;
+        }
+        return qtyCache;
     }
 
-
-    void setAccount(int offset, int length) {
-        accountOffset = offset;
-        accountLength = length;
+    public double price() {
+        if (!priceParsed) {
+            priceCache = parseDouble(offsets[FixTag.Price.tag()],
+                    lengths[FixTag.Price.tag()]);
+            priceParsed = true;
+        }
+        return priceCache;
     }
 
-    void setClOrdId(int offset, int length) {
-        clOrdIdOffset = offset;
-        clOrdIdLength = length;
+    /* ===========================
+       Setters (called by parser)
+       =========================== */
+
+    void setTag(int tag, int offset, int length) {
+        offsets[tag] = offset;
+        lengths[tag] = length;
+
+        // reset lazy cache if price or qty updated
+        if (tag == FixTag.Price.tag()) {
+            priceParsed = false;
+        }
+        if (tag == FixTag.OrderQty.tag()) {
+            qtyParsed = false;
+        }
     }
 
-    void setSymbol(int offset, int length) {
-        symbolOffset = offset;
-        symbolLength = length;
-    }
-
-    void setTransactTime(int offset, int length) {
-        transactTimeOffset = offset;
-        transactTimeLength = length;
-    }
-
-    void setRule80A(int offset, int length) {
-        rule80AOffset = offset;
-        rule80ALength = length;
-    }
-
-    void setHandlInst(int value) {
-        handlInst = value;
-    }
-
-    void setSide(int value) {
-        side = value;
-    }
-
-    void setTimeInForce(int value) {
-        timeInForce = value;
-    }
-
-    void setExDestination(int offset, int length) {
-        exDestinationOffset = offset;
-        exDestinationLength = length;
-    }
-
-    void setOrderQty(int value) {
-        orderQty = value;
-    }
-
-
-    void setPrice(double value) {
-        price = value;
-    }
+    /* ===========================
+       Presence checks
+       =========================== */
 
     boolean hasClOrdId() {
-        return clOrdIdLength > 0;
+        return lengths[FixTag.ClOrdID.tag()] > 0;
     }
 
     boolean hasSymbol() {
-        return symbolLength > 0;
+        return lengths[FixTag.Symbol.tag()] > 0;
     }
 
     boolean hasOrderQty() {
-        return orderQty > 0;
+        return lengths[FixTag.OrderQty.tag()] > 0;
     }
 
     boolean hasPrice() {
-        return price != 0.0;
+        return lengths[FixTag.Price.tag()] > 0;
     }
 
     boolean hasSide() {
-        return side != 0;
+        return lengths[FixTag.Side.tag()] > 0;
     }
 
     boolean hasExDestination() {
-        return exDestinationLength > 0;
+        return lengths[FixTag.ExDestination.tag()] > 0;
     }
+
+    /* ===========================
+       Reset for reuse
+       =========================== */
 
     void reset() {
-        orderQty = 0;
-        price = 0.0;
-        side = 0;
-        handlInst = 0;
-        timeInForce = 0;
+        for (int i = 0; i < offsets.length; i++) {
+            offsets[i] = 0;
+            lengths[i] = 0;
+        }
 
-
-        accountOffset = 0;
-        accountLength = 0;
-
-        clOrdIdOffset = 0;
-        clOrdIdLength = 0;
-
-        symbolOffset = 0;
-        symbolLength = 0;
-
-        rule80AOffset = 0;
-        rule80ALength = 0;
-
-        transactTimeOffset = 0;
-        transactTimeLength = 0;
-
-        exDestinationOffset = 0;
-        exDestinationLength = 0;
+        priceParsed = false;
+        qtyParsed = false;
+        priceCache = 0.0;
+        qtyCache = 0;
     }
 
+    /* ===========================
+       Internal helpers
+       =========================== */
 
+    private CharSequence wrapView(int tag) {
+        stringView.wrap(buffer, offsets[tag], lengths[tag]);
+        return stringView;
+    }
+
+    private int parseInt(int offset, int length) {
+        int val = 0;
+        int end = offset + length;
+        for (int i = offset; i < end; i++)
+            val = val * 10 + (buffer[i] - '0');
+        return val;
+    }
+
+    private double parseDouble(int offset, int length) {
+        double value = 0;
+        double divisor = 1;
+        boolean fraction = false;
+
+        int end = offset + length;
+
+        for (int i = offset; i < end; i++) {
+            byte b = buffer[i];
+            if (b == '.') {
+                fraction = true;
+            } else {
+                value = value * 10 + (b - '0');
+                if (fraction)
+                    divisor *= 10;
+            }
+        }
+
+        return fraction ? value / divisor : value;
+    }
 }

@@ -131,73 +131,31 @@ public final class FixParserOptimized {
                 switch (tag) {
                     // parse the header fields.
                     case 9:
-                        headerView.setBodyLength(parseInt(buffer, valueStart, valueEnd));
-                        break;
                     case 34:
-                        headerView.setMsgSeqNum(parseInt(buffer, valueStart, valueEnd));
-                        break;
                     case 49:
-                        headerView.setSender(valueStart, len);
-                        break;
                     case 52:
-                        headerView.setSendingTime(valueStart, len);
-                        break;
                     case 56:
-                        headerView.setTarget(valueStart, len);
+                        headerView.setTag(tag,valueStart, len);
                         break;
                     case 35:
                         msgType = buffer[valueStart];
                         break;
-
                     // ===== Body fields =====
                     case 55:
-                        if (msgType == 'D') newOrderView.setSymbol(valueStart, len);
-                        else if (msgType == 'F') cancelOrderView.setSymbol(valueStart, len);
-                        else if (msgType == 'G') replaceOrderView.setSymbol(valueStart, len);
-                        break;
                     case 54:
-                        if (msgType == 'D') newOrderView.setSide(buffer[valueStart]);
-                        else if (msgType == 'F') cancelOrderView.setSide(buffer[valueStart]);
-                        else if (msgType == 'G') replaceOrderView.setSide(buffer[valueStart]);
-                        break;
                     case 11:
-                        if (msgType == 'D') newOrderView.setClOrdId(valueStart, len);
-                        else if (msgType == 'F') cancelOrderView.setClOrdId(valueStart, len);
-                        else if (msgType == 'G') replaceOrderView.setClOrdId(valueStart, len);
-                        break;
-                    case 41:
-                        if (msgType == 'F') cancelOrderView.setOrigClOrdId(valueStart, len);
-                        else if (msgType == 'G') replaceOrderView.setOrigClOrdId(valueStart, len);
-                        break;
                     case 1:
-                        newOrderView.setAccount(valueStart, len);
-                        break;
                     case 21:
-                        newOrderView.setHandlInst(buffer[valueStart]);
-                        break;
-                    case 44:
-                        if (msgType == 'D')
-                            newOrderView.setPrice(parseDouble(buffer, valueStart, valueEnd));
-                        else if (msgType == 'G')
-                            replaceOrderView.setPrice(parseDouble(buffer, valueStart, valueEnd));
-                        break;
-                    case 38:
-                        if (msgType == 'D')
-                            newOrderView.setOrderQty(parseInt(buffer, valueStart, valueEnd));
-                        else if (msgType == 'G')
-                            replaceOrderView.setOrderQty(parseInt(buffer, valueStart, valueEnd));
-                        break;
                     case 47:
-                        newOrderView.setRule80A(valueStart, len);
-                        break;
                     case 59:
-                        newOrderView.setTimeInForce(buffer[valueStart]);
-                        break;
                     case 60:
-                        newOrderView.setTransactTime(valueStart, len);
-                        break;
                     case 100:
-                        newOrderView.setExDestination(valueStart, len);
+                    case 41:
+                    case 44:
+                    case 38:
+                        if (msgType == 'D') newOrderView.setTag(tag,valueStart, len);
+                        else if (msgType == 'F') cancelOrderView.setTag(tag,valueStart, len);
+                        else if (msgType == 'G') replaceOrderView.setTag(tag,valueStart, len);
                         break;
                 }
 
@@ -237,9 +195,9 @@ public final class FixParserOptimized {
                     return FixError.MISSING_SYMBOL;
                 break;
             case 'F': // Cancel
-                if (!cancelOrderView.hasClOrdId())
+                if (!cancelOrderView.hasTag(FixTag.ClOrdID.tag()))
                     return FixError.MISSING_CLORDID;
-                if (!cancelOrderView.hasOrigClOrdId())
+                if (!cancelOrderView.hasTag(FixTag.OrigClOrdID.tag()))
                     return FixError.MISSING_ORIG_CLORDID;
                 break;
             case 'G': // Replace
@@ -267,31 +225,5 @@ public final class FixParserOptimized {
             val = val * 10 + (buffer[i] - '0');
         return val;
     }
-
-    /**
-     * Lightweight ASCII decimal parsing.
-     * Avoids any allocation and usage of bigdecimal .
-     * Assumes well-formed numeric input - for now.
-     *
-     * @Todo : to handle not well-formed input. return a Double.NAN and then eventually FixError.INVALID_NUMERIC
-     */
-    private static double parseDouble(byte[] buffer, int start, int end) {
-        double value = 0;
-        double divisor = 1;
-        boolean fraction = false;
-
-        for (int i = start; i < end; i++) {
-            byte b = buffer[i];
-            if (b == '.') {
-                fraction = true;
-            } else {
-                value = value * 10 + (b - '0');
-                if (fraction)
-                    divisor *= 10;
-            }
-        }
-        return fraction ? value / divisor : value;
-    }
-
 
 }

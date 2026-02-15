@@ -1,27 +1,27 @@
 package com.vikas.main;
 
 /**
- * This class represents a view to the Replace Order message.
- * Basically allocation free new order body view
+ * Allocation-free view of ReplaceRequest (35=G).
+ *
+ * Design:
+ * - Stores offsets and lengths per FIX tag
+ * - No primitive fields stored directly
+ * - Numeric fields parsed lazily and cached
+ * - Zero allocations during parsing
  */
 public final class ReplaceOrderView {
 
     private byte[] buffer;
 
-    // Required fields for Replace (G)
+    private final int[] offsets = new int[FixTag.MAX_TAG_SUPPORTED];
+    private final int[] lengths = new int[FixTag.MAX_TAG_SUPPORTED];
 
-    private int clOrdIdOffset;
-    private int clOrdIdLength;
+    // ---- Lazy primitive cache ----
+    private boolean priceParsed;
+    private double priceCache;
 
-    private int origClOrdIdOffset;
-    private int origClOrdIdLength;
-
-    private int symbolOffset;
-    private int symbolLength;
-
-    private int side;
-    private double price;
-    private int orderQty;
+    private boolean qtyParsed;
+    private int qtyCache;
 
     private final AsciiStringView stringView = new AsciiStringView();
 
@@ -29,93 +29,135 @@ public final class ReplaceOrderView {
         this.buffer = buffer;
     }
 
-    // ================= STRING GETTERS =================
+    /* ===========================
+       String / CharSequence fields
+       =========================== */
 
     public CharSequence clOrdId() {
-        stringView.wrap(buffer, clOrdIdOffset, clOrdIdLength);
-        return stringView;
+        return wrapView(FixTag.ClOrdID.tag());
     }
 
     public CharSequence origClOrdId() {
-        stringView.wrap(buffer, origClOrdIdOffset, origClOrdIdLength);
-        return stringView;
+        return wrapView(FixTag.OrigClOrdID.tag());
     }
 
     public CharSequence symbol() {
-        stringView.wrap(buffer, symbolOffset, symbolLength);
-        return stringView;
+        return wrapView(FixTag.Symbol.tag());
     }
 
-    // ================= PRIMITIVE GETTERS =================
+    /* ===========================
+       Primitive fields (lazy)
+       =========================== */
 
     public int side() {
-        return side;
-    }
-
-    public double price() {
-        return price;
+        return buffer[offsets[FixTag.Side.tag()]];
     }
 
     public int orderQty() {
-        return orderQty;
+        if (!qtyParsed) {
+            qtyCache = parseInt(offsets[FixTag.OrderQty.tag()],
+                    lengths[FixTag.OrderQty.tag()]);
+            qtyParsed = true;
+        }
+        return qtyCache;
     }
 
-    // ================= SETTERS (parser only) =================
-
-    void setClOrdId(int offset, int length) {
-        clOrdIdOffset = offset;
-        clOrdIdLength = length;
+    public double price() {
+        if (!priceParsed) {
+            priceCache = parseDouble(offsets[FixTag.Price.tag()],
+                    lengths[FixTag.Price.tag()]);
+            priceParsed = true;
+        }
+        return priceCache;
     }
 
-    void setOrigClOrdId(int offset, int length) {
-        origClOrdIdOffset = offset;
-        origClOrdIdLength = length;
+    /* ===========================
+       Setters (called by parser)
+       =========================== */
+
+    void setTag(int tag, int offset, int length) {
+        offsets[tag] = offset;
+        lengths[tag] = length;
+
+        if (tag == FixTag.Price.tag()) {
+            priceParsed = false;
+        }
+        if (tag == FixTag.OrderQty.tag()) {
+            qtyParsed = false;
+        }
     }
 
-    void setSymbol(int offset, int length) {
-        symbolOffset = offset;
-        symbolLength = length;
+    /* ===========================
+       Presence checks
+       =========================== */
+
+    boolean hasClOrdId() {
+        return lengths[FixTag.ClOrdID.tag()] > 0;
     }
 
-    void setSide(int value) {
-        side = value;
+    boolean hasOrigClOrdId() {
+        return lengths[FixTag.OrigClOrdID.tag()] > 0;
     }
-
-    void setPrice(double value) {
-        price = value;
-    }
-
-    void setOrderQty(int value) {
-        orderQty = value;
-    }
-
-    boolean hasClOrdId() { return clOrdIdLength > 0; }
-
-    boolean hasOrigClOrdId() { return origClOrdIdLength > 0;  }
 
     boolean hasOrderQty() {
-        return orderQty > 0;
+        return lengths[FixTag.OrderQty.tag()] > 0;
     }
 
     boolean hasPrice() {
-        return price != 0.0;
+        return lengths[FixTag.Price.tag()] > 0;
     }
 
+    /* ===========================
+       Reset for reuse
+       =========================== */
 
     void reset() {
-        orderQty = 0;
-        price = 0.0;
-        side = 0;
+        for (int i = 0; i < offsets.length; i++) {
+            offsets[i] = 0;
+            lengths[i] = 0;
+        }
 
-        clOrdIdOffset = 0;
-        clOrdIdLength = 0;
-
-        origClOrdIdOffset = 0;
-        origClOrdIdLength = 0;
-
-        symbolOffset = 0;
-        symbolLength = 0;
+        priceParsed = false;
+        qtyParsed = false;
+        priceCache = 0.0;
+        qtyCache = 0;
     }
 
+    /* ===========================
+       Internal helpers
+       =========================== */
 
+    private CharSequence wrapView(int tag) {
+        stringView.wrap(buffer, offsets[tag], lengths[tag]);
+        return stringView;
+    }
+
+    private int parseInt(int offset, int length) {
+        int val = 0;
+        int end = offset + length;
+        for (int i = offset; i < end; i++)
+            val = val * 10 + (buffer[i] - '0');
+        return val;
+    }
+
+    private double parseDouble(int offset, int length) {
+        double value = 0;
+        double divisor = 1;
+        boolean fraction = false;
+
+        int end = offset + length;
+
+        for (int i = offset; i < end; i++) {
+            byte b = buffer[i];
+            if (b == '.') {
+                fraction = true;
+            } else {
+                value = value * 10 + (b - '0');
+                if (fraction)
+                    divisor *= 10;
+            }
+        }
+
+        return fraction ? value / divisor : value;
+    }
 }

@@ -1,121 +1,133 @@
 package com.vikas.main;
 
+import java.util.Arrays;
+
 /**
- * This class represents the FIX message header.
- * Store parsed values of common header fields
- * Provides lightweight accessors without allocation
- * Reusable across multiple FIX message types
- * String fields are exposed via single reused AsciiStringView to avoid allocation *
- * FIX header fields handled (for now)
- * - 9   (BodyLength)
- * - 34  (MsgSeqNum)
- * - 49  (SenderCompID)
- * - 52  (SendingTime)
- * - 56  (TargetCompID)
- * Fields can be added as required
+ * FIX Header view.
+ *
+ * - Zero allocation
+ * - Offset/length based
+ * - Lazy numeric parsing with caching
+ * - Reusable across messages
+ *
+ * Supported header tags:
+ * 9  - BodyLength
+ * 34 - MsgSeqNum
+ * 49 - SenderCompID
+ * 52 - SendingTime
+ * 56 - TargetCompID
  */
 public final class HeaderView {
 
-    /**
-     * Underlying FIX message buffer.
-     */
     private byte[] buffer;
 
-    // Primitive header fields
-    private int bodyLength;
-    private int msgSeqNum;
+    // Offset/length storage for all tags
+    private final int[] offsets = new int[FixTag.MAX_TAG_SUPPORTED];
+    private final int[] lengths = new int[FixTag.MAX_TAG_SUPPORTED];
 
-    // Offsets into buffer for the various fields
-    private int senderCompOffset;
-    private int senderCompLength;
+    // Lazy numeric cache
+    private int cachedBodyLength;
+    private boolean bodyLengthParsed;
 
-    private int targetCompOffset;
-    private int targetCompLength;
+    private int cachedMsgSeqNum;
+    private boolean msgSeqNumParsed;
 
-    private int sendingTimeOffset;
-    private int sendingTimeLength;
-
-    /**
-     * Reused string view as explained earlier to avoid per-call allocation and reduce memory footprint.
-     */
     private final AsciiStringView stringView = new AsciiStringView();
 
-    /**
-     * Wraps the underlying FIX message buffer.
-     * No data is copied.
-     */
     public void wrap(byte[] buffer) {
         this.buffer = buffer;
     }
 
+    // =========================
+    // Lazy numeric getters
+    // =========================
+
     public int bodyLength() {
-        return bodyLength;
+        if (!bodyLengthParsed) {
+            int tag = FixTag.BodyLength.tag();
+            cachedBodyLength = parseInt(offsets[tag], lengths[tag]);
+            bodyLengthParsed = true;
+        }
+        return cachedBodyLength;
     }
 
     public int msgSeqNum() {
-        return msgSeqNum;
+        if (!msgSeqNumParsed) {
+            int tag = FixTag.MsgSeqNum.tag();
+            cachedMsgSeqNum = parseInt(offsets[tag], lengths[tag]);
+            msgSeqNumParsed = true;
+        }
+        return cachedMsgSeqNum;
     }
 
-    /**
-     * Returns SenderCompID as a zero-allocation CharSequence.
-     */
+    // =========================
+    // String getters (zero allocation)
+    // =========================
+
     public CharSequence senderCompID() {
-        stringView.wrap(buffer, senderCompOffset, senderCompLength);
+        int tag = FixTag.SenderCompID.tag();
+        stringView.wrap(buffer, offsets[tag], lengths[tag]);
         return stringView;
     }
 
-    /**
-     * Returns TargetCompID as a zero-allocation CharSequence.
-     */
     public CharSequence targetCompID() {
-        stringView.wrap(buffer, targetCompOffset, targetCompLength);
+        int tag = FixTag.TargetCompID.tag();
+        stringView.wrap(buffer, offsets[tag], lengths[tag]);
         return stringView;
     }
 
-    /**
-     * Returns SendingTime as a zero-allocation CharSequence.
-     */
     public CharSequence sendingTime() {
-        stringView.wrap(buffer, sendingTimeOffset, sendingTimeLength);
+        int tag = FixTag.SendingTime.tag();
+        stringView.wrap(buffer, offsets[tag], lengths[tag]);
         return stringView;
     }
 
+    // =========================
+    // Parser entry point
+    // =========================
 
-    void setBodyLength(int value) {
-        bodyLength = value;
+    void setTag(int tag, int offset, int length) {
+        offsets[tag] = offset;
+        lengths[tag] = length;
+
+        // Reset lazy cache if relevant tag updated
+        if (tag == FixTag.BodyLength.tag()) {
+            bodyLengthParsed = false;
+        } else if (tag == FixTag.MsgSeqNum.tag()) {
+            msgSeqNumParsed = false;
+        }
     }
 
-    void setMsgSeqNum(int value) {
-        msgSeqNum = value;
+    boolean hasTag(int tag) {
+        return lengths[tag] > 0;
     }
 
-    void setSender(int offset, int length) {
-        senderCompOffset = offset;
-        senderCompLength = length;
-    }
-
-    void setTarget(int offset, int length) {
-        targetCompOffset = offset;
-        targetCompLength = length;
-    }
-
-    void setSendingTime(int offset, int length) {
-        sendingTimeOffset = offset;
-        sendingTimeLength = length;
-    }
+    // =========================
+    // Reset for reuse
+    // =========================
 
     void reset() {
-        bodyLength = 0;
-        msgSeqNum = 0;
+        Arrays.fill(offsets, 0);
+        Arrays.fill(lengths, 0);
 
-        senderCompOffset = 0;
-        senderCompLength = 0;
+        bodyLengthParsed = false;
+        msgSeqNumParsed = false;
 
-        targetCompOffset = 0;
-        targetCompLength = 0;
-
-        sendingTimeOffset = 0;
-        sendingTimeLength = 0;
+        cachedBodyLength = 0;
+        cachedMsgSeqNum = 0;
     }
 
+    // =========================
+    // Internal lightweight ASCII int parser
+    // =========================
+
+    private int parseInt(int offset, int length) {
+        int val = 0;
+        int end = offset + length;
+
+        for (int i = offset; i < end; i++)
+            val = val * 10 + (buffer[i] - '0');
+
+        return val;
+    }
 }
