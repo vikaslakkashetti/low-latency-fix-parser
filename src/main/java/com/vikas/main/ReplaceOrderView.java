@@ -2,8 +2,6 @@ package com.vikas.main;
 
 /**
  * Allocation-free view of ReplaceRequest (35=G).
- *
- * Design:
  * - Stores offsets and lengths per FIX tag
  * - No primitive fields stored directly
  * - Numeric fields parsed lazily and cached

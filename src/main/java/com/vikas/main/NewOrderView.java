@@ -2,8 +2,6 @@ package com.vikas.main;
 
 /**
  * Allocation-free view of NewOrderSingle (35=D).
- *
- * Design:
  * - Stores offsets and lengths per FIX tag
  * - No String allocations
  * - Primitives parsed lazily on first access and cached

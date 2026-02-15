@@ -1,7 +1,8 @@
 package com.vikas.main;
 
 /**
- * Allocation-free Cancel Order view using tag-indexed storage.
+ * This class represents a view to the Cancel Order message.
+ * Basically allocation free new order body view
  */
 public final class CancelOrderView {
 
