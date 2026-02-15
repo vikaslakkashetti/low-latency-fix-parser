@@ -69,10 +69,6 @@ public final class FixParserOptimized {
      * @return FixError indicating parse success or specific validation failure
      */
     public FixError parse(byte[] buffer, int length) {
-
-        msgType = 0;
-
-
         msgType = 0;
         // Wrap underlying buffer in reusable views
         headerView.wrap(buffer);
@@ -211,7 +207,7 @@ public final class FixParserOptimized {
 
             } else if (valueStart == -1) {
 
-                // Parsing numeric tag
+                // check to ensure the tag is numeric
                 if (b < '0' || b > '9')
                     return FixError.MALFORMED_TAG;
 

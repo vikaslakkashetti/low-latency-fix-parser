@@ -14,10 +14,10 @@ public class FixParser1MBenchmark {
                 "8=FIX.4.4" + soh() +
                         "9=176" + soh() +
                         "35=D" + soh() +
-                        "34=2" + soh() +
                         "49=SENDER" + soh() +
-                        "52=20260212-12:30:00.000" + soh() +
                         "56=TARGET" + soh() +
+                        "34=2" + soh() +
+                        "52=20260212-12:30:00.000" + soh() +
                         "1=ACC123" + soh() +
                         "11=ORDER123" + soh() +
                         "21=1" + soh() +
